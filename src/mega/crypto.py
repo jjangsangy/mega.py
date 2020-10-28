@@ -1,9 +1,10 @@
 from Crypto.Cipher import AES
-import json
 import base64
-import struct
 import binascii
+import json
 import random
+import re
+import struct
 import sys
 
 # Python3 compatibility
@@ -85,7 +86,15 @@ def decrypt_attr(attr, key):
     attr = aes_cbc_decrypt(attr, a32_to_str(key))
     attr = makestring(attr)
     attr = attr.rstrip('\0')
-    return json.loads(attr[4:]) if attr[:6] == 'MEGA{"' else False
+    start, end = re.search(r'{', attr), re.search(r'}(?!.*\})', attr)
+
+    if not (start and end):
+        return False
+    try:
+        return json.loads(attr[start.start(): end.start() + 1])
+    except json.JSONDecodeError:
+        return False
+
 
 
 def a32_to_str(a):
